@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MoneyMate Pro 2.0 - Ultimate Finance Tracker</title>
+    
+    <!-- Fonts & External Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* === THEME & VARIABLES === */
+        :root {
+            --bg-base: #F2F2F7;
+            --surface: #FFFFFF;
+            --surface-glass: rgba(255, 255, 255, 0.85);
+            --text-main: #1C1C1E;
+            --text-muted: #8E8E93;
+            --border: #E5E5EA;
+            
+            --blue: #007AFF;
+            --blue-light: rgba(0, 122, 255, 0.1);
+            --green: #34C759;
+            --red: #FF3B30;
+            --orange: #FF9500;
+            --purple: #AF52DE;
+            --yellow: #FFCC00;
+            
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+            --shadow-lg: 0 16px 32px rgba(0,0,0,0.12);
+            
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --nav-height: 85px;
+        }
+
+        html.dark {
+            --bg-base: #000000;
+            --surface: #1C1C1E;
+            --surface-glass: rgba(28, 28, 30, 0.85);
+            --text-main: #F2F2F7;
+            --text-muted: #98989D;
+            --border: #38383A;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        /* === RESET & BASE === */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-base); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 0.3s ease; }
+        
+        /* === TYPOGRAPHY === */
+        h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.5px; }
+        h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; }
+        h3 { font-size: 1rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem; }
+        
+        /* === LAYOUT === */
+        .topbar { padding: 3rem 1.25rem 1rem; display: flex; justify-content: space-between; align-items: center; background: var(--surface-glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 40; border-bottom: 1px solid var(--border); }
+        .main-content { flex: 1; overflow-y: auto; padding: 1.25rem 1.25rem calc(var(--nav-height) + 2rem); scroll-behavior: smooth; }
+        
+        .view { display: none; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .view.active { display: block; }
+        
+        /* === COMPONENTS === */
+        .card { background: var(--surface); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-sm); margin-bottom: 1rem; border: 1px solid var(--border); transition: transform 0.2s; }
+        .card-premium { background: linear-gradient(135deg, var(--blue), #5856D6); color: white; border: none; box-shadow: var(--shadow-md); }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .stat-box { background: var(--surface); padding: 1rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.5rem; }
+        .stat-value { font-size: 1.25rem; font-weight: 700; }
+        
+        .btn { background: var(--blue); color: #fff; border: none; padding: 1rem; border-radius: var(--radius-sm); font-weight: 600; font-size: 1rem; width: 100%; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 0.5rem; transition: all 0.2s; box-shadow: var(--shadow-sm); }
+        .btn:active { transform: scale(0.98); }
+        .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); box-shadow: none; }
+        .btn-small { padding: 0.5rem 1rem; font-size: 0.875rem; width: auto; }
+        
+        .badge { padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        .bg-green { background: rgba(52, 199, 89, 0.15); color: var(--green); }
+        .bg-red { background: rgba(255, 59, 48, 0.15); color: var(--red); }
+        .text-green { color: var(--green); }
+        .text-red { color: var(--red); }
+        .text-blue { color: var(--blue); }
+        
+        /* === PROGRESS BARS === */
+        .progress-bg { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
+        .progress-fill { height: 100%; background: var(--blue); border-radius: 4px; transition: width 0.5s ease; }
+        
+        /* === CALENDAR === */
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-weight: 600; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; text-align: center; }
+        .day { padding: 0.75rem 0; border-radius: var(--radius-sm); font-size: 0.875rem; font-weight: 500; cursor: pointer; position: relative; }
+        .day.profit { background: rgba(52, 199, 89, 0.15); color: var(--green); font-weight: 700; }
+        .day.loss { background: rgba(255, 59, 48, 0.15); color: var(--red); font-weight: 700; }
+        .day.salary { background: rgba(0, 122, 255, 0.15); color: var(--blue); }
+        .day.empty { background: var(--bg-base); color: var(--text-muted); }
+        
+        /* === LIST ITEMS === */
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+        .list-item:last-child { border-bottom: none; }
+        .icon-box { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; margin-right: 1rem; flex-shrink: 0; }
+        
+        /* === FORMS & MODALS === */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 100; display: none; align-items: flex-end; }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
+        .modal-content { background: var(--surface); width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 1.5rem; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: var(--shadow-lg); }
+        
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .form-control { width: 100%; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-base); color: var(--text-main); font-size: 1rem; outline: none; transition: border 0.2s; }
+        .form-control:focus { border-color: var(--blue); background: var(--surface); }
+        
+        /* === CHARTS === */
+        .chart-container { position: relative; height: 250px; width: 100%; margin-bottom: 1.5rem; }
+
+        /* === BOTTOM NAV & FAB === */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height); background: var(--surface-glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 50; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); font-size: 0.65rem; font-weight: 600; cursor: pointer; }
+        .nav-item.active { color: var(--blue); }
+        
+        .fab-container { position: fixed; bottom: calc(var(--nav-height) + 1.5rem); right: 1.25rem; z-index: 60; display: flex; flex-direction: column; align-items: flex-end; gap: 1rem; }
+        .fab-menu { display: none; flex-direction: column; gap: 0.75rem; align-items: flex-end; }
+        .fab-menu.active { display: flex; animation: fadeUp 0.2s ease; }
+        .fab-btn { width: 56px; height: 56px; border-radius: 50%; background: var(--blue); color: white; border: none; box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
+        .fab-btn:active { transform: scale(0.95); }
+        .mini-fab { width: auto; padding: 0.5rem 1rem; border-radius: 20px; background: var(--surface); color: var(--text-main); font-weight: 600; border: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--shadow-sm); }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+        <h1 id="page-title">Dashboard</h1>
+        <div style="display:flex; gap: 1rem;">
+            <i data-lucide="search" onclick="App.openModal('search-modal')"></i>
+            <i data-lucide="moon" onclick="App.toggleTheme()" id="theme-icon"></i>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content" id="main-scroll">
+        
+        <!-- 1. DASHBOARD -->
+        <div id="view-dashboard" class="view active">
+            <div class="card card-premium">
+                <p style="opacity: 0.8; font-size: 0.875rem;">Total Current Balance</p>
+                <h2 id="d-balance" style="font-size: 2.5rem; margin: 0.5rem 0;">₹0</h2>
+                <div style="display:flex; justify-content: space-between; font-size: 0.875rem;">
+                    <span>Saving Streak: <b id="d-streak">0</b> days</span>
+                    <span>Saving Rate: <b id="d-rate">0%</b></span>
+                </div>
+            </div>
+
+            <h3>Today's Overview</h3>
+            <div class="grid-2" style="margin-bottom: 1.5rem;">
+                <div class="stat-box"><span class="text-muted text-sm">Income</span><span id="d-today-inc" class="stat-value text-blue">₹0</span></div>
+                <div class="stat-box"><span class="text-muted text-sm">Expenses</span><span id="d-today-exp" class="stat-value text-red">₹0</span></div>
+                <div class="stat-box" style="grid-column: span 2;"><span class="text-muted text-sm">Saved Today</span><span id="d-today-sav" class="stat-value text-green">₹0</span></div>
+            </div>
+
+            <h3>This Month</h3>
+            <div class="grid-2" style="margin-bottom: 1.5rem;">
+                <div class="stat-box"><span class="text-muted text-sm">Total Income</span><span id="d-mo-inc" class="stat-value text-blue">₹0</span></div>
+                <div class="stat-box"><span class="text-muted text-sm">Total Spent</span><span id="d-mo-exp" class="stat-value text-red">₹0</span></div>
+            </div>
+
+            <h3>Lifetime Stats</h3>
+            <div class="card">
+                <div class="list-item"><span>Total Earnings</span><strong id="d-life-inc">₹0</strong></div>
+                <div class="list-item"><span>Total Expenses</span><strong id="d-life-exp">₹0</strong></div>
+                <div class="list-item"><span>Avg Daily Saved</span><strong id="d-avg-sav">₹0</strong></div>
+            </div>
+        </div>
+
+        <!-- 2. ANALYTICS & CHARTS -->
+        <div id="view-analytics" class="view">
+            <div class="card">
+                <h2>Monthly Overview</h2>
+                <div class="chart-container"><canvas id="chart-monthly"></canvas></div>
+            </div>
+            <div class="card">
+                <h2>Expense by Category</h2>
+                <div class="chart-container"><canvas id="chart-pie"></canvas></div>
+            </div>
+            <div class="card">
+                <h2>Last 30 Days Savings</h2>
+                <div class="chart-container"><canvas id="chart-savings"></canvas></div>
+            </div>
+        </div>
+
+        <!-- 3. CALENDAR -->
+        <div id="view-calendar" class="view">
+            <div class="card">
+                <div class="cal-header">
+                    <i data-lucide="chevron-left" onclick="App.changeMonth(-1)"></i>
+                    <h2 id="cal-title" style="margin:0;">July 2026</h2>
+                    <i data-lucide="chevron-right" onclick="App.changeMonth(1)"></i>
+                </div>
+                <div class="cal-grid" id="cal-grid"></div>
+                <div style="display:flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; font-size: 0.75rem;">
+                    <span style="display:flex; align-items:center; gap:4px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div> Profit</span>
+                    <span style="display:flex; align-items:center; gap:4px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--red)"></div> Loss</span>
+                    <span style="display:flex; align-items:center; gap:4px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--blue)"></div> Salary Only</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. HISTORY -->
+        <div id="view-history" class="view">
+            <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                <select id="hist-month" class="form-control" style="padding: 0.5rem;" onchange="App.renderHistory()"></select>
+                <select id="hist-sort" class="form-control" style="padding: 0.5rem;" onchange="App.renderHistory()">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="highest_sav">Highest Savings</option>
+                    <option value="highest_exp">Highest Expense</option>
+                </select>
+            </div>
+            <div id="history-list"></div>
+        </div>
+
+        <!-- 5. BILLS & EMI -->
+        <div id="view-bills" class="view">
+            <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                <button class="btn btn-small" onclick="App.activeSubTab='bills'; App.renderBills()">Bills</button>
+                <button class="btn btn-small btn-outline" onclick="App.activeSubTab='emis'; App.renderBills()">EMI / Loans</button>
+            </div>
+            <div id="bills-content"></div>
+        </div>
+
+        <!-- 6. GOALS -->
+        <div id="view-goals" class="view">
+            <div id="goals-list"></div>
+        </div>
+
+        <!-- 7. SETTINGS -->
+        <div id="view-settings" class="view">
+            <div class="card">
+                <h3>Preferences</h3>
+                <div class="form-group">
+                    <label>Currency Symbol</label>
+                    <input type="text" id="set-currency" class="form-control" value="₹" onchange="App.saveSettings()">
+                </div>
+            </div>
+            <div class="card">
+                <h3>Categories</h3>
+                <div id="cat-list" style="margin-bottom:1rem;"></div>
+                <button class="btn btn-outline" onclick="App.openModal('cat-modal')">+ Add Category</button>
+            </div>
+            <div class="card">
+                <h3>Data Management</h3>
+                <button class="btn btn-outline" style="margin-bottom: 0.5rem;" onclick="App.exportData()">Export Data (JSON)</button>
+                <button class="btn btn-outline" style="margin-bottom: 0.5rem;" onclick="document.getElementById('import-file').click()">Import Data</button>
+                <input type="file" id="import-file" style="display:none;" accept=".json" onchange="App.importData(event)">
+                <button class="btn" style="background: var(--red);" onclick="App.wipeData()">Wipe All Data</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- FLOATING ACTION BUTTON -->
+    <div class="fab-container">
+        <div class="fab-menu" id="fab-menu">
+            <button class="mini-fab" onclick="App.openEntryModal()"><i data-lucide="plus-circle"></i> Daily Entry</button>
+            <button class="mini-fab" onclick="App.openModal('bill-modal')"><i data-lucide="receipt"></i> Add Bill</button>
+            <button class="mini-fab" onclick="App.openModal('emi-modal')"><i data-lucide="credit-card"></i> Add EMI</button>
+            <button class="mini-fab" onclick="App.openModal('goal-modal')"><i data-lucide="target"></i> Add Goal</button>
+        </div>
+        <button class="fab-btn" onclick="document.getElementById('fab-menu').classList.toggle('active')">
+            <i data-lucide="plus"></i>
+        </button>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="App.switchTab('dashboard', this)"><i data-lucide="layout-dashboard"></i>Home</div>
+        <div class="nav-item" onclick="App.switchTab('analytics', this)"><i data-lucide="pie-chart"></i>Stats</div>
+        <div class="nav-item" onclick="App.switchTab('calendar', this)"><i data-lucide="calendar"></i>Calendar</div>
+        <div class="nav-item" onclick="App.switchTab('history', this)"><i data-lucide="history"></i>History</div>
+        <div class="nav-item" onclick="App.switchTab('bills', this)"><i data-lucide="wallet"></i>Bills</div>
+        <div class="nav-item" onclick="App.switchTab('goals', this)"><i data-lucide="target"></i>Goals</div>
+        <div class="nav-item" onclick="App.switchTab('settings', this)"><i data-lucide="settings"></i>More</div>
+    </nav>
+
+    <!-- MODALS -->
+    
+    <!-- ENTRY MODAL -->
+    <div class="modal-overlay" id="entry-modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h2>Daily Entry</h2>
+                <i data-lucide="x" onclick="App.closeModal('entry-modal')" style="cursor:pointer;"></i>
+            </div>
+            <form id="entry-form">
+                <div class="form-group"><label>Date</label><input type="date" id="e-date" class="form-control" required></div>
+                <div class="form-group"><label>Income / Salary</label><input type="number" id="e-sal" class="form-control e-calc" placeholder="0"></div>
+                
+                <h3>Expenses</h3>
+                <div class="grid-2" id="e-categories-container"></div>
+                
+                <div class="form-group" style="margin-top:1rem;"><label>Notes</label><input type="text" id="e-notes" class="form-control" placeholder="Optional"></div>
+                
+                <div class="card" style="display:flex; justify-content:space-between; font-weight:700;">
+                    <span>Net Savings:</span><span id="e-live-save" class="text-blue">0</span>
+                </div>
+                <button type="submit" class="btn">Save Entry</button>
+                <button type="button" class="btn btn-outline" style="margin-top:0.5rem; color:var(--red);" id="btn-del-entry" onclick="App.deleteEntry()">Delete Entry</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- GLOBAL SEARCH MODAL -->
+    <div class="modal-overlay" id="search-modal">
+        <div class="modal-content" style="height: 80vh;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <input type="text" id="g-search" class="form-control" placeholder="Search notes, amounts, dates..." oninput="App.globalSearch()">
+                <i data-lucide="x" onclick="App.closeModal('search-modal')" style="cursor:pointer; margin-left:1rem;"></i>
+            </div>
+            <div id="search-results"></div>
+        </div>
+    </div>
+
+    <!-- BILL MODAL -->
+    <div class="modal-overlay" id="bill-modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1rem;"><h2>Add Bill</h2><i data-lucide="x" onclick="App.closeModal('bill-modal')"></i></div>
+            <form id="bill-form">
+                <div class="form-group"><label>Name</label><input type="text" id="b-name" class="form-control" required></div>
+                <div class="form-group"><label>Amount</label><input type="number" id="b-amount" class="form-control" required></div>
+                <div class="form-group"><label>Due Date</label><input type="date" id="b-date" class="form-control" required></div>
+                <button type="submit" class="btn">Save Bill</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- EMI MODAL -->
+    <div class="modal-overlay" id="emi-modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1rem;"><h2>Add Loan/EMI</h2><i data-lucide="x" onclick="App.closeModal('emi-modal')"></i></div>
+            <form id="emi-form">
+                <div class="form-group"><label>Loan Name</label><input type="text" id="emi-name" class="form-control" required></div>
+                <div class="form-group"><label>Monthly EMI Amount</label><input type="number" id="emi-amount" class="form-control" required></div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Total Months</label><input type="number" id="emi-total" class="form-control" required></div>
+                    <div class="form-group"><label>Months Paid</label><input type="number" id="emi-paid" class="form-control" value="0"></div>
+                </div>
+                <button type="submit" class="btn">Save EMI</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- GOAL MODAL -->
+    <div class="modal-overlay" id="goal-modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1rem;"><h2>Savings Goal</h2><i data-lucide="x" onclick="App.closeModal('goal-modal')"></i></div>
+            <form id="goal-form">
+                <div class="form-group"><label>Goal Name</label><input type="text" id="g-name" class="form-control" required></div>
+                <div class="form-group"><label>Target Amount</label><input type="number" id="g-target" class="form-control" required></div>
+                <div class="form-group"><label>Already Saved</label><input type="number" id="g-saved" class="form-control" value="0"></div>
+                <button type="submit" class="btn">Save Goal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CATEGORY MODAL -->
+    <div class="modal-overlay" id="cat-modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1rem;"><h2>New Category</h2><i data-lucide="x" onclick="App.closeModal('cat-modal')"></i></div>
+            <form id="cat-form">
+                <div class="form-group"><label>Category Name</label><input type="text" id="c-name" class="form-control" required></div>
+                <div class="form-group"><label>Color Code (Hex)</label><input type="color" id="c-color" class="form-control" style="height:50px; padding:0.2rem;" value="#007AFF"></div>
+                <button type="submit" class="btn">Add Category</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // === STATE & STORAGE ===
+        const DB_KEY = 'moneymate_pro_v2';
+        
+        const DefaultCategories = [
+            { id: 'c1', name: 'Food', color: '#FF9500' },
+            { id: 'c2', name: 'Transport', color: '#34C759' },
+            { id: 'c3', name: 'Bills/EMI', color: '#FF3B30' },
+            { id: 'c4', name: 'Shopping', color: '#AF52DE' },
+            { id: 'c5', name: 'Health', color: '#007AFF' },
+            { id: 'c6', name: 'Other', color: '#8E8E93' }
+        ];
+
+        const State = {
+            data: {
+                entries: {}, // { 'YYYY-MM-DD': { sal: 1000, exp: { c1: 200, c2: 50 }, note: '' } }
+                bills: [],   // { id, name, amt, date, status }
+                emis: [],    // { id, name, emi, totalM, paidM }
+                goals: [],   // { id, name, target, saved }
+                categories: DefaultCategories,
+                settings: { theme: 'light', currency: '₹' }
+            },
+            load() {
+                const raw = localStorage.getItem(DB_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    this.data = { ...this.data, ...parsed };
+                    // Migration fallback
+                    if(!this.data.categories) this.data.categories = DefaultCategories;
+                    if(!this.data.emis) this.data.emis = [];
+                }
+            },
+            save() { localStorage.setItem(DB_KEY, JSON.stringify(this.data)); }
+        };
+
+        // === APP CORE LOGIC ===
+        const App = {
+            charts: {},
+            calDate: new Date(),
+            activeSubTab: 'bills',
+
+            init() {
+                State.load();
+                this.applyTheme();
+                this.populateFilters();
+                this.renderAll();
+                this.setupLiveCalc();
+                this.setupForms();
+                lucide.createIcons();
+                
+                // Hide FAB menu on click outside
+                document.addEventListener('click', (e) => {
+                    if(!e.target.closest('.fab-container')) {
+                        document.getElementById('fab-menu').classList.remove('active');
+                    }
+                });
+            },
+
+            fmt(val) { return State.data.settings.currency + Number(val || 0).toLocaleString('en-IN'); },
+            getToday() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().split('T')[0]; },
+
+            // --- NAVIGATION & UI ---
+            switchTab(tabId, el) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById(`view-${tabId}`).classList.add('active');
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                if(el) el.classList.add('active');
+                
+                const titles = { dashboard: 'Dashboard', analytics: 'Analytics', calendar: 'Calendar', history: 'History', bills: 'Bills & EMI', goals: 'Savings Goals', settings: 'Settings' };
+                document.getElementById('page-title').innerText = titles[tabId];
+                
+                if(tabId === 'analytics') setTimeout(() => this.renderCharts(), 100);
+                this.renderAll();
+                window.scrollTo(0,0);
+            },
+
+            applyTheme() {
+                const isDark = State.data.settings.theme === 'dark';
+                document.documentElement.classList.toggle('dark', isDark);
+                const icon = document.getElementById('theme-icon');
+                if(icon) icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+                lucide.createIcons();
+                if(this.charts.monthly) this.renderCharts(); // Re-render charts for theme colors
+            },
+
+            toggleTheme() {
+                State.data.settings.theme = State.data.settings.theme === 'light' ? 'dark' : 'light';
+                State.save();
+                this.applyTheme();
+            },
+
+            openModal(id) { document.getElementById(id).classList.add('active'); },
+            closeModal(id) { document.getElementById(id).classList.remove('active'); },
+
+            // --- DATA HELPERS ---
+            getEntryData(dateStr) {
+                const e = State.data.entries[dateStr];
+                if(!e) return { sal: 0, totExp: 0, saved: 0, isProfit: false, isEmpty: true };
+                let totExp = Object.values(e.exp || {}).reduce((a,b) => a + Number(b), 0);
+                let saved = (Number(e.sal) || 0) - totExp;
+                return { sal: Number(e.sal)||0, totExp, saved, isProfit: saved >= 0, isEmpty: false };
+            },
+
+            // --- RENDERERS ---
+            renderAll() {
+                this.renderDashboard();
+                this.renderCalendar();
+                this.renderHistory();
+                this.renderBills();
+                this.renderGoals();
+                this.renderSettings();
+            },
+
+            renderDashboard() {
+                let bal=0, tInc=0, tExp=0, tSav=0, mInc=0, mExp=0, lInc=0, lExp=0;
+                let streak=0, maxStreak=0, currStreak=0;
+                
+                const today = this.getToday();
+                const currMonth = today.substring(0,7);
+                const sortedDates = Object.keys(State.data.entries).sort().reverse();
+                
+                // Calculate Streaks & Totals
+                sortedDates.forEach((d, idx) => {
+                    const data = this.getEntryData(d);
+                    bal += data.saved;
+                    lInc += data.sal;
+                    lExp += data.totExp;
+                    
+                    if(d === today) { tInc = data.sal; tExp = data.totExp; tSav = data.saved; }
+                    if(d.startsWith(currMonth)) { mInc += data.sal; mExp += data.totExp; }
+
+                    // Streak logic (continuous dates logic is complex, doing simple positive savings streak)
+                    if(data.saved > 0) currStreak++;
+                    else { maxStreak = Math.max(maxStreak, currStreak); currStreak = 0; }
+                });
+                
+                streak = currStreak;
+                maxStreak = Math.max(maxStreak, currStreak);
+                let days = sortedDates.length || 1;
+                let rate = lInc > 0 ? ((lInc - lExp) / lInc) * 100 : 0;
+
+                document.getElementById('d-balance').innerText = this.fmt(bal);
+                document.getElementById('d-today-inc').innerText = this.fmt(tInc);
+                document.getElementById('d-today-exp').innerText = this.fmt(tExp);
+                document.getElementById('d-today-sav').innerText = this.fmt(tSav);
+                document.getElementById('d-mo-inc').innerText = this.fmt(mInc);
+                document.getElementById('d-mo-exp').innerText = this.fmt(mExp);
+                
+                document.getElementById('d-life-inc').innerText = this.fmt(lInc);
+                document.getElementById('d-life-exp').innerText = this.fmt(lExp);
+                document.getElementById('d-avg-sav').innerText = this.fmt(bal / days);
+                document.getElementById('d-streak').innerText = streak;
+                document.getElementById('d-rate').innerText = rate.toFixed(1) + '%';
+            },
+
+            renderCalendar() {
+                const y = this.calDate.getFullYear(), m = this.calDate.getMonth();
+                document.getElementById('cal-title').innerText = this.calDate.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+                
+                let grid = `<div class="day" style="font-weight:600; font-size:0.75rem;">S</div><div class="day" style="font-weight:600; font-size:0.75rem;">M</div><div class="day" style="font-weight:600; font-size:0.75rem;">T</div><div class="day" style="font-weight:600; font-size:0.75rem;">W</div><div class="day" style="font-weight:600; font-size:0.75rem;">T</div><div class="day" style="font-weight:600; font-size:0.75rem;">F</div><div class="day" style="font-weight:600; font-size:0.75rem;">S</div>`;
+                
+                const firstDay = new Date(y, m, 1).getDay();
+                const daysInMo = new Date(y, m+1, 0).getDate();
+                
+                for(let i=0; i<firstDay; i++) grid += `<div></div>`;
+                
+                for(let d=1; d<=daysInMo; d++) {
+                    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const ed = this.getEntryData(dateStr);
+                    
+                    let cls = 'empty';
+                    if(!ed.isEmpty) {
+                        if(ed.sal > 0 && ed.totExp === 0) cls = 'salary';
+                        else if(ed.isProfit) cls = 'profit';
+                        else cls = 'loss';
+                    }
+                    
+                    grid += `<div class="day ${cls}" onclick="App.openEntryModal('${dateStr}')">${d}</div>`;
+                }
+                document.getElementById('cal-grid').innerHTML = grid;
+            },
+            changeMonth(dir) { this.calDate.setMonth(this.calDate.getMonth() + dir); this.renderCalendar(); },
+
+            renderCharts() {
+                Chart.defaults.color = State.data.settings.theme === 'dark' ? '#98989D' : '#8E8E93';
+                Chart.defaults.font.family = 'Inter';
+                
+                const dates = Object.keys(State.data.entries).sort();
+                const last30 = dates.slice(-30);
+                
+                // Aggregators
+                let cats = {}; State.data.categories.forEach(c => cats[c.name] = 0);
+                let moInc = {}, moExp = {};
+                let dSav = [];
+                
+                last30.forEach(d => {
+                    const e = State.data.entries[d];
+                    const m = d.substring(0,7);
+                    const dt = this.getEntryData(d);
+                    
+                    moInc[m] = (moInc[m]||0) + dt.sal;
+                    moExp[m] = (moExp[m]||0) + dt.totExp;
+                    dSav.push(dt.saved);
+                    
+                    if(e.exp) {
+                        for(let [cid, amt] of Object.entries(e.exp)) {
+                            const cname = State.data.categories.find(c=>c.id===cid)?.name || 'Other';
+                            cats[cname] += Number(amt);
+                        }
+                    }
+                });
+
+                const cColors = State.data.categories.map(c=>c.color);
+                
+                const buildChart = (id, type, data, options) => {
+                    if(this.charts[id]) this.charts[id].destroy();
+                    const ctx = document.getElementById(id).getContext('2d');
+                    this.charts[id] = new Chart(ctx, { type, data, options: { responsive:true, maintainAspectRatio:false, ...options } });
+                };
+
+                // Monthly Bar
+                buildChart('chart-monthly', 'bar', {
+                    labels: Object.keys(moInc),
+                    datasets: [
+                        { label: 'Income', data: Object.values(moInc), backgroundColor: '#007AFF', borderRadius: 4 },
+                        { label: 'Expense', data: Object.values(moExp), backgroundColor: '#FF3B30', borderRadius: 4 }
+                    ]
+                });
+
+                // Category Pie
+                buildChart('chart-pie', 'doughnut', {
+                    labels: Object.keys(cats),
+                    datasets: [{ data: Object.values(cats), backgroundColor: cColors, borderWidth: 0 }]
+                }, { cutout: '70%', plugins:{legend:{position:'right'}} });
+
+                // Savings Trend Line
+                buildChart('chart-savings', 'line', {
+                    labels: last30.map(d=>d.substring(5)),
+                    datasets: [{ label: 'Savings', data: dSav, borderColor: '#34C759', tension: 0.4, fill:true, backgroundColor:'rgba(52, 199, 89, 0.1)' }]
+                }, { elements:{point:{radius:0}} });
+            },
+
+            populateFilters() {
+                const months = new Set(Object.keys(State.data.entries).map(d => d.substring(0,7)));
+                let opts = `<option value="all">All Months</option>`;
+                Array.from(months).sort().reverse().forEach(m => opts += `<option value="${m}">${m}</option>`);
+                document.getElementById('hist-month').innerHTML = opts;
+            },
+
+            renderHistory() {
+                const mFilter = document.getElementById('hist-month').value;
+                const sort = document.getElementById('hist-sort').value;
+                
+                let arr = Object.entries(State.data.entries).map(([date, e]) => {
+                    const dt = this.getEntryData(date);
+                    return { date, ...e, ...dt };
+                });
+                
+                if(mFilter !== 'all') arr = arr.filter(e => e.date.startsWith(mFilter));
+                
+                arr.sort((a,b) => {
+                    if(sort === 'newest') return b.date.localeCompare(a.date);
+                    if(sort === 'oldest') return a.date.localeCompare(b.date);
+                    if(sort === 'highest_sav') return b.saved - a.saved;
+                    if(sort === 'highest_exp') return b.totExp - a.totExp;
+                });
+
+                const html = arr.map(e => `
+                    <div class="card" onclick="App.openEntryModal('${e.date}')" style="cursor:pointer;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                            <strong style="font-size:1.1rem;">${new Date(e.date).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}</strong>
+                            <span class="badge ${e.saved >= 0 ? 'bg-green' : 'bg-red'}">${e.saved >= 0 ? '+' : ''}${this.fmt(e.saved)}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.875rem; color:var(--text-muted);">
+                            <span>In: <span class="text-blue">${this.fmt(e.sal)}</span></span>
+                            <span>Out: <span class="text-red">${this.fmt(e.totExp)}</span></span>
+                        </div>
+                        ${e.notes ? `<div style="font-size:0.8rem; margin-top:0.5rem; color:var(--text-muted);"><i data-lucide="align-left" style="width:12px;height:12px;"></i> ${e.notes}</div>` : ''}
+                    </div>
+                `).join('');
+                
+                document.getElementById('history-list').innerHTML = html || '<div style="text-align:center; padding:2rem; color:var(--text-muted);">No records found.</div>';
+                lucide.createIcons();
+            },
+
+            renderBills() {
+                const cont = document.getElementById('bills-content');
+                if(this.activeSubTab === 'bills') {
+                    cont.innerHTML = State.data.bills.map(b => `
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <h3 style="color:var(--text-main); margin-bottom:0.2rem;">${b.name}</h3>
+                                    <span style="font-size:0.8rem; color:var(--text-muted);">Due: ${b.date}</span>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:1.2rem; font-weight:700; color:var(--red);">${this.fmt(b.amount)}</div>
+                                    <button class="btn btn-small btn-outline" style="margin-top:0.5rem; padding:0.2rem 0.5rem; color:var(--red); border-color:var(--red);" onclick="App.delItem('bills', '${b.id}')">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('') + `<button class="btn btn-outline" onclick="App.openModal('bill-modal')">+ Add New Bill</button>`;
+                } else {
+                    cont.innerHTML = State.data.emis.map(e => {
+                        const pct = Math.min(100, Math.round((e.paidM / e.totalM) * 100));
+                        return `
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between;">
+                                <strong>${e.name}</strong>
+                                <span class="text-red">${this.fmt(e.emi)}/mo</span>
+                            </div>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.5rem; display:flex; justify-content:space-between;">
+                                <span>${e.paidM} of ${e.totalM} Months Paid</span>
+                                <span>${pct}%</span>
+                            </div>
+                            <div class="progress-bg"><div class="progress-fill" style="width:${pct}%"></div></div>
+                            <div style="text-align:right; margin-top:0.5rem;">
+                                <button class="btn btn-small" style="background:var(--green); display:inline-block;" onclick="App.payEmi('${e.id}')">+ Pay Month</button>
+                                <button class="btn btn-small btn-outline" style="display:inline-block; color:var(--red);" onclick="App.delItem('emis', '${e.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `}).join('') + `<button class="btn btn-outline" onclick="App.openModal('emi-modal')">+ Add Loan / EMI</button>`;
+                }
+            },
+
+            renderGoals() {
+                const html = State.data.goals.map(g => {
+                    const pct = Math.min(100, Math.round((g.saved / g.target) * 100));
+                    return `
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between;">
+                            <strong>${g.name}</strong>
+                            <span class="text-blue">${pct}%</span>
+                        </div>
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.5rem;">
+                            ${this.fmt(g.saved)} / ${this.fmt(g.target)}
+                        </div>
+                        <div class="progress-bg"><div class="progress-fill" style="width:${pct}%"></div></div>
+                        <div style="text-align:right; margin-top:0.5rem;">
+                            <button class="btn btn-small btn-outline" style="display:inline-block; color:var(--red);" onclick="App.delItem('goals', '${g.id}')">Delete</button>
+                        </div>
+                    </div>
+                `}).join('') + `<button class="btn btn-outline" onclick="App.openModal('goal-modal')">+ Create Goal</button>`;
+                document.getElementById('goals-list').innerHTML = html;
+            },
+
+            renderSettings() {
+                document.getElementById('set-currency').value = State.data.settings.currency;
+                document.getElementById('cat-list').innerHTML = State.data.categories.map(c => `
+                    <div class="list-item">
+                        <div style="display:flex; align-items:center;">
+                            <div style="width:16px;height:16px;border-radius:50%;background:${c.color};margin-right:10px;"></div>
+                            ${c.name}
+                        </div>
+                        <i data-lucide="trash-2" style="color:var(--red); cursor:pointer; width:18px;" onclick="App.delCategory('${c.id}')"></i>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            },
+
+            // --- FORMS & CRUD ---
+            buildEntryForm() {
+                document.getElementById('e-categories-container').innerHTML = State.data.categories.map(c => `
+                    <div class="form-group">
+                        <label style="display:flex; align-items:center; gap:4px;">
+                            <div style="width:10px;height:10px;border-radius:50%;background:${c.color}"></div> ${c.name}
+                        </label>
+                        <input type="number" id="e-c-${c.id}" class="form-control e-calc" placeholder="0">
+                    </div>
+                `).join('');
+                this.setupLiveCalc();
+            },
+
+            openEntryModal(dateStr = this.getToday()) {
+                document.getElementById('fab-menu').classList.remove('active');
+                this.buildEntryForm();
+                document.getElementById('entry-form').reset();
+                document.getElementById('e-date').value = dateStr;
+                
+                const e = State.data.entries[dateStr];
+                if(e) {
+                    document.getElementById('e-sal').value = e.sal || '';
+                    document.getElementById('e-notes').value = e.notes || '';
+                    if(e.exp) Object.keys(e.exp).forEach(cid => {
+                        const el = document.getElementById(`e-c-${cid}`);
+                        if(el) el.value = e.exp[cid] || '';
+                    });
+                }
+                
+                document.getElementById('btn-del-entry').style.display = e ? 'block' : 'none';
+                this.calcEntryLive();
+                this.openModal('entry-modal');
+            },
+
+            setupLiveCalc() {
+                document.querySelectorAll('.e-calc').forEach(el => el.addEventListener('input', () => this.calcEntryLive()));
+            },
+
+            calcEntryLive() {
+                const sal = Number(document.getElementById('e-sal').value) || 0;
+                let exp = 0;
+                State.data.categories.forEach(c => {
+                    const el = document.getElementById(`e-c-${c.id}`);
+                    if(el) exp += Number(el.value) || 0;
+                });
+                const net = sal - exp;
+                const out = document.getElementById('e-live-save');
+                out.innerText = this.fmt(net);
+                out.className = net >= 0 ? 'text-green' : 'text-red';
+            },
+
+            setupForms() {
+                document.getElementById('entry-form').onsubmit = (e) => {
+                    e.preventDefault();
+                    const d = document.getElementById('e-date').value;
+                    let exp = {};
+                    State.data.categories.forEach(c => {
+                        const val = Number(document.getElementById(`e-c-${c.id}`).value) || 0;
+                        if(val > 0) exp[c.id] = val;
+                    });
+                    
+                    State.data.entries[d] = {
+                        sal: Number(document.getElementById('e-sal').value) || 0,
+                        exp,
+                        notes: document.getElementById('e-notes').value
+                    };
+                    State.save();
+                    this.closeModal('entry-modal');
+                    this.renderAll();
+                };
+
+                const bindSimpleModal = (formId, modalId, type, builder) => {
+                    document.getElementById(formId).onsubmit = (e) => {
+                        e.preventDefault();
+                        State.data[type].push(builder());
+                        State.save();
+                        this.closeModal(modalId);
+                        e.target.reset();
+                        this.renderAll();
+                    };
+                };
+
+                bindSimpleModal('bill-form', 'bill-modal', 'bills', () => ({
+                    id: Date.now().toString(),
+                    name: document.getElementById('b-name').value,
+                    amount: Number(document.getElementById('b-amount').value),
+                    date: document.getElementById('b-date').value
+                }));
+
+                bindSimpleModal('emi-form', 'emi-modal', 'emis', () => ({
+                    id: Date.now().toString(),
+                    name: document.getElementById('emi-name').value,
+                    emi: Number(document.getElementById('emi-amount').value),
+                    totalM: Number(document.getElementById('emi-total').value),
+                    paidM: Number(document.getElementById('emi-paid').value)
+                }));
+
+                bindSimpleModal('goal-form', 'goal-modal', 'goals', () => ({
+                    id: Date.now().toString(),
+                    name: document.getElementById('g-name').value,
+                    target: Number(document.getElementById('g-target').value),
+                    saved: Number(document.getElementById('g-saved').value)
+                }));
+
+                bindSimpleModal('cat-form', 'cat-modal', 'categories', () => ({
+                    id: 'c' + Date.now(),
+                    name: document.getElementById('c-name').value,
+                    color: document.getElementById('c-color').value
+                }));
+            },
+
+            deleteEntry() {
+                const d = document.getElementById('e-date').value;
+                if(confirm('Delete entry for ' + d + '?')) {
+                    delete State.data.entries[d];
+                    State.save();
+                    this.closeModal('entry-modal');
+                    this.renderAll();
+                }
+            },
+
+            delItem(type, id) {
+                if(confirm('Delete this item?')) {
+                    State.data[type] = State.data[type].filter(i => i.id !== id);
+                    State.save();
+                    this.renderAll();
+                }
+            },
+
+            delCategory(id) {
+                if(State.data.categories.length <= 1) return alert("Must have at least one category.");
+                if(confirm('Delete category? Historic data will lose the category label.')) {
+                    State.data.categories = State.data.categories.filter(c => c.id !== id);
+                    State.save();
+                    this.renderSettings();
+                }
+            },
+
+            payEmi(id) {
+                const emi = State.data.emis.find(e => e.id === id);
+                if(emi && emi.paidM < emi.totalM) {
+                    emi.paidM++;
+                    State.save();
+                    this.renderBills();
+                }
+            },
+
+            saveSettings() {
+                State.data.settings.currency = document.getElementById('set-currency').value;
+                State.save();
+                this.renderAll();
+            },
+
+            // --- GLOBAL SEARCH ---
+            globalSearch() {
+                const q = document.getElementById('g-search').value.toLowerCase();
+                const out = document.getElementById('search-results');
+                if(q.length < 2) { out.innerHTML = ''; return; }
+
+                let res = '';
+                // Search Entries
+                for(const [date, e] of Object.entries(State.data.entries)) {
+                    if(date.includes(q) || (e.notes||'').toLowerCase().includes(q) || e.sal.toString().includes(q)) {
+                        res += `<div class="list-item" onclick="App.openEntryModal('${date}')">
+                            <div><strong>${date}</strong><br><span style="font-size:0.8rem;color:var(--text-muted)">Entry Note: ${e.notes||'N/A'}</span></div>
+                        </div>`;
+                    }
+                }
+                // Search Bills & Goals
+                State.data.bills.forEach(b => {
+                    if(b.name.toLowerCase().includes(q)) res += `<div class="list-item"><div><strong>Bill: ${b.name}</strong><br><span class="text-red">${this.fmt(b.amount)}</span></div></div>`;
+                });
+                State.data.goals.forEach(g => {
+                    if(g.name.toLowerCase().includes(q)) res += `<div class="list-item"><div><strong>Goal: ${g.name}</strong><br><span class="text-blue">${this.fmt(g.saved)}/${this.fmt(g.target)}</span></div></div>`;
+                });
+
+                out.innerHTML = res || '<p style="padding:1rem;text-align:center;color:var(--text-muted);">No results found.</p>';
+            },
+
+            // --- EXPORT / IMPORT / WIPE ---
+            exportData() {
+                const blob = new Blob([JSON.stringify(State.data, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `MoneyMatePro2_Backup_${this.getToday()}.json`;
+                a.click();
+            },
+            
+            importData(e) {
+                const file = e.target.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if(imported && imported.entries) {
+                            State.data = imported;
+                            State.save();
+                            alert("Data imported successfully!");
+                            window.location.reload();
+                        } else alert("Invalid backup file.");
+                    } catch(err) { alert("Error reading file."); }
+                };
+                reader.readAsText(file);
+            },
+
+            wipeData() {
+                if(confirm("DANGER: This will permanently delete ALL data. Are you absolutely sure?")) {
+                    localStorage.removeItem(DB_KEY);
+                    window.location.reload();
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>
